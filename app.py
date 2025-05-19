@@ -1,3 +1,4 @@
+
 from lime import lime_image
 from skimage.segmentation import mark_boundaries
 import matplotlib.pyplot as plt
@@ -13,6 +14,12 @@ import warnings
 import cv2
 import tempfile
 import time  # Import the time module
+
+import google.generativeai as genai
+import streamlit as st
+import os
+from dotenv import load_dotenv
+
 from googletrans import Translator  # Import the Translator class
 
 warnings.filterwarnings('ignore')
@@ -811,79 +818,11 @@ def parse_voice_input(command):
 
 
 # ========================== AI Chatbot Assistant ==========================
-# import openai
 
-# Set your OpenAI API key here directly or use Streamlit secrets
-# openai.api_key = st.secrets.get("openai_api_key") this line is for when deployed on streamlit cloud
 
-# openai.api_key = "REMOVED" # Replace or set in .streamlit/secrets.toml
+load_dotenv()
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# def get_ai_response(user_question):
-#     try:
-#         response = openai.ChatCompletion.create(
-#             model="gpt-3.5-turbo",
-#             messages=[
-#                 {
-#                     "role": "system",
-#                     "content": "You are a helpful assistant for an agriculture-based Streamlit app. Answer user questions related to using the app features like plant disease prediction, crop recommendation, and fertilizer guidance. Keep it friendly and brief."
-#                 },
-#                 {
-#                     "role": "user",
-#                     "content": user_question
-#                 }
-#             ]
-#         )
-#         return response['choices'][0]['message']['content']
-#     except Exception as e:
-#         return f"❌ Error getting response: {e}"
-# import google.generativeai as genai
-# genai.configure(api_key="REMOVED")  # Replace with your real Gemini key
-
-# # model = genai.GenerativeModel(api_key="gemini-pro")
-
-# # def get_ai_response(user_question):
-# #     try:
-# #         response = model.generate_content(user_question)
-# #         return response.text
-# #     except Exception as e:
-# #         return f"❌ Error getting response: {e}"
-# model = genai.GenerativeModel("models/text-bison-001")
-
-# def get_ai_response(user_question):
-#     try:
-#         # Use generate_text for text generation (not chat)
-#         response = model.generate(prompt=user_question)
-#         return response.text
-#     except Exception as e:
-#         return f"❌ Error getting response: {e}"
-
-# # Function to display chatbot UI in sidebar
-# def chatbot_ui():
-#     st.sidebar.title("🤖 Chat with Agri-Assistant")
-#     st.sidebar.markdown("Ask anything about how to use disease, crop, or fertilizer prediction.")
-
-#     if "chat_history" not in st.session_state:
-#         st.session_state.chat_history = []
-
-#     user_input = st.sidebar.text_input("Ask your question:", key="chat_input")
-
-#     if st.sidebar.button("Send") and user_input:
-#         response = get_ai_response(user_input)
-#         st.session_state.chat_history.append((user_input, response))
-
-#     # Display chat history
-#     for user_q, bot_r in reversed(st.session_state.chat_history):
-#         st.sidebar.markdown(f"**You:** {user_q}")
-#         st.sidebar.markdown(f"**Bot:** {bot_r}")
-
-# # === Call the chatbot inside the main app ===
-# chatbot_ui()
-import google.generativeai as genai
-import streamlit as st
-
-import google.generativeai as genai
-
-genai.configure(api_key="REMOVED")
 @st.cache_data(show_spinner=False)
 def get_models():
     models = genai.list_models()  # generator
@@ -894,33 +833,7 @@ models_list = get_models()
 
 st.sidebar.title("🤖 Select AI Model")
 
-# model = genai.GenerativeModel(model_name)
-# model = genai.GenerativeModel("models/text-bison-001")
 
-# def get_ai_response(user_question,model_name):
-#     model = genai.GenerativeModel(model_name)
-#     try:
-#         response = model.generate_content(user_question)
-#         return response.text
-#     except Exception as e:
-#         return f"❌ Error getting response: {e}"
-# def get_ai_response(user_question, model_name):
-#     model = genai.GenerativeModel(model_name)
-#     try:
-#         # Custom instruction prompt before user's question
-#         system_prompt = (
-#             "You are an assistant for the Agri-Assistant app. "
-#             "When asked about usage, respond briefly and direct the user how to use the app features. "
-#             "Example: 'Go to sidebar, select model, choose voice or type input, then predict.' "
-#             "Do NOT give general crop info or external knowledge."
-#         )
-#         # Combine system prompt and user question
-#         full_prompt = system_prompt + "\nUser: " + user_question
-
-#         response = model.generate_content(full_prompt)
-#         return response.text
-#     except Exception as e:
-#         return f"❌ Error getting response: {e}"
 def get_ai_response(user_question, model_name):
     model = genai.GenerativeModel(model_name)
 
@@ -1035,34 +948,4 @@ def translate_from_english(text, target_lang):
         return translator.translate(text, src='en', dest=target_lang).text
     return text
 
-# Recognize and handle voice question
-
-
-# Updated chatbot UI with language + voice
-# def chatbot_ui():
-#     st.sidebar.title("🤖 Chat with Agri-Assistant")
-
-#     # Language selection
-#     lang_display = st.sidebar.selectbox("🌐 Language / भाषा", ["English", "हिंदी"])
-#     lang_code = 'hi' if lang_display == "हिंदी" else 'en'
-
-#     if "chat_history" not in st.session_state:
-#         st.session_state.chat_history = []
-
-#     user_input = st.sidebar.text_input("Type your question:")
-
-#     if st.sidebar.button("🎤 Speak"):
-#         voice_text = recognize_voice_chat()
-#         if voice_text:
-#             user_input = voice_text
-
-#     if st.sidebar.button("Send") and user_input:
-#         translated_input, detected_lang = translate_to_english(user_input)
-#         response_en = get_ai_response(translated_input)
-#         final_response = translate_from_english(response_en, lang_code)
-#         st.session_state.chat_history.append((user_input, final_response))
-
-#     for user_q, bot_r in reversed(st.session_state.chat_history):
-#         st.sidebar.markdown(f"**You:** {user_q}")
-#         st.sidebar.markdown(f"**Bot:** {bot_r}")
 # # ============================================================================
